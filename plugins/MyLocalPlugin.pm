@@ -25,7 +25,7 @@ sub new {
   return $self;
 }
 
-# Often spam uses different From: and Return-Path:
+# Often spam uses To: another from your local domains e.g. To: news@newletters.com
 # while most legitimate e-mails does not.
 sub check_MyLocalPlugin {
 
