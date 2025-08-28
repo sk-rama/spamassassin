@@ -1,7 +1,16 @@
 package Mail::SpamAssassin::Plugin::MyLocalPlugin;
 0;
 
+
+###
+# You must install Email::Address;
+# Linux:
+# cpan
+# cpan[1]> install Email::Address
+### 
+
 use strict;
+use Email::Address;
 use Mail::SpamAssassin;
 use Mail::SpamAssassin::Plugin;
 use Mail::SpamAssassin::Conf;
@@ -42,39 +51,35 @@ sub check_MyLocalPlugin {
 
         # 'ToCc' can be used to mean the contents of both the 'To' and 'Cc' headers.
         my $to_temp = lc $msg->get( 'ToCc' );
-        dbg("MyLocalPlugin: To mail addresses from to variable is: $to_temp\n");
+        dbg("MyLocalPlugin: To mail addresses from ToCc variable is: $to_temp\n");
+        info("MyLocalPlugin: To mail addresses from ToCc variable is: $to_temp\n");
 
-        # May return multiple emails as string: e.g: <user1@example.com>, <user2@example.com>, <user3@test.com>
-        # or if there only one email in 'To' header, return string "user@example.com"  
-        # if there is more that one email, remove from such string chars "<", ">", "," 
-        $to_temp =~ s/[<>,]+//g;
+        # May return multiple emails as string: e.g: "Pavel Pavlovic" <pavepavlovic@gmail.com>, <user1@example.com>, <user2@example.com>, <user3@test.com>
+        # use Email::Address; perl package to extract emails and email domains
+        my @addresses = Email::Address->parse($to_temp);
+        my @to_cc_domains;
+        my @to_cc_emails;
 
-        # create array @to_temp from string from all emails in string $to_temp
-        my @to_temp = split(/\s+/, $to_temp);
+        for my $email (@addresses) {
+            my $email_address = $email->address;
+            my $domain_part = $email->host;
+            push @to_cc_emails, $email_address;
+            push @to_cc_domains, $domain_part;
+        }
 
         # debug information
-        dbg("MyLocalPlugin: To mail addresses from to_temp variable is: $to_temp\n");
+        dbg("MyLocalPlugin: To mail addresses from to_temp variable is: @to_cc_emails\n");
+        dbg("MyLocalPlugin: To mail domains from to_temp variable is: @to_cc_domains\n");
+        info("MyLocalPlugin: To mail addresses from to_temp variable is: @to_cc_emails\n");
+        info("MyLocalPlugin: To mail domains from to_temp variable is: @to_cc_domains\n");
  
         # If mail header To: is missing, return as true
-        if ($to_temp eq "") {
+        if (@to_cc_domains == 0) {
             dbg("MyLocalPlugin: mail header To and Cc is not defined");
-            #$pms->set_tag("ABCDEF952", "not defined");
+            info("MyLocalPlugin: mail header To and Cc is not defined");
             return 1;
         }       
         else {
-            # create empty array @to_cc_domains
-            # loop for every email in @to_temp array, split every email to user and domain part
-            # domain part add to @to_cc_domains array
-            my @to_cc_domains;
-            for my $email (@to_temp){
-                dbg("MyLocalPlugin email that I find: $email\n");
-                my @to_split = split(/@/, $email);
-                my $email_user = $to_split[0];
-                my $email_domain = $to_split[1];
-                push @to_cc_domains, $email_domain;
-            }
-            dbg("MyLocalPlugin: destinations domain from emails are: @to_cc_domains");
-
             # inicialize $find_status and $find_domain variables
             # $find_status will be exit code for this script, inicialize to 1: When script return 1, than spamassassin take action and assign score to this rule
             my $find_status = 1; 
@@ -94,7 +99,9 @@ sub check_MyLocalPlugin {
                 }
             }
             dbg("MyLocalPlugin: Can I find any allowed domain in To or Cc header? Answer is $find_status: zero means True, one means False");
+            info("MyLocalPlugin: Can I find any allowed domain in To or Cc header? Answer is $find_status: zero means True, one means False");
             dbg("MyLocalPlugin: Last domain I can find in allowed domains is: $find_domain");
+            info("MyLocalPlugin: Last domain I can find in allowed domains is: $find_domain");
             return $find_status;
         }
 }
