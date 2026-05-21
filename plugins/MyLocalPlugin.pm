@@ -41,7 +41,6 @@ sub check_MyLocalPlugin {
         dbg("MyLocalPlugin is ready to use");
 
         my ($self, $msg) = @_;
-        my $pms = $msg->{permsgstatus};
 
         my $tag_name = "LOCAL_HEADER_TO";
         my @my_domains = ("secar.cz", "sherlog.cz", "sherlog.com", "sherlog.eu", "sherlog.sk", "pipelines.cz", "sherlogvision.cz", "czechtraffic.cz", "sherlogtrace.cz", "secarstar.cl", "importtankovani.cz");
@@ -77,6 +76,7 @@ sub check_MyLocalPlugin {
         if (@to_cc_domains == 0) {
             dbg("MyLocalPlugin: mail header To and Cc is not defined");
             info("MyLocalPlugin: mail header To and Cc is not defined");
+            $msg->set_tag("$tag_name", "mail header To and Cc is not defined");
             return 1;
         }       
         else {
@@ -102,6 +102,7 @@ sub check_MyLocalPlugin {
             info("MyLocalPlugin: Can I find any allowed domain in To or Cc header? Answer is $find_status: zero means True, one means False");
             dbg("MyLocalPlugin: Last domain I can find in allowed domains is: $find_domain");
             info("MyLocalPlugin: Last domain I can find in allowed domains is: $find_domain");
+            $msg->set_tag("$tag_name", "return status: $find_status, last domain I can find in allowed domains is: $find_domain");
             return $find_status;
         }
 }
